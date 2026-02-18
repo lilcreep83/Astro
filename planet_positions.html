@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Planet Positions</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 40px; color: #fff; background:#000; }
+        table { border-collapse: collapse; width: 100%; }
+        th, td { border: 1px solid #ccc; padding: 8px; text-align: center; }
+        th { background-color: #333; }
+        td { background-color: rgba(0,0,0,0.5); }
+    </style>
+</head>
+<body>
+    <h1>Current Planet Positions</h1>
+    <p id="error" style="color:red;"></p>
+    <button id="refresh">Refresh</button>
+    <table id="positions">
+        <thead>
+            <tr>
+                <th>Body</th>
+                <th>RA (h)</th>
+                <th>Dec (°)</th>
+                <th>Distance (AU)</th>
+            </tr>
+        </thead>
+        <tbody></tbody>
+    </table>
+
+    <!-- local astronomy-engine build -->
+    <script src="Astro-sub/astronomy.min.js"></script>
+    <!-- project logic -->
+    <script src="Astro-sub/planet_positions.js"></script>
+    <script>
+        // define an initializer that changeScene will call each time the scene loads
+        function sceneInit() {
+            console.log('Astronomy lib object:', window.Astronomy);
+            const errEl = document.getElementById('error');
+            function safeUpdate() {
+                try {
+                    updatePlanetTable();
+                    errEl.textContent = '';
+                } catch (e) {
+                    console.error('update error', e);
+                    const msg = e && e.message ? e.message : String(e);
+                    errEl.textContent = 'Failed to compute positions: ' + msg + (e && e.stack ? '\n' + e.stack : '');
+                }
+            }
+            const refreshBtn = document.getElementById('refresh');
+            if (refreshBtn) refreshBtn.addEventListener('click', safeUpdate);
+            safeUpdate();
+        }
+    </script>
+</body>
+</html>
