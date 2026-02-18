@@ -14,21 +14,31 @@
             background-size: cover;
             background-repeat: no-repeat;
             background-attachment: fixed;
+            color: #fff; /* global text color */
         }
         #scene {
             margin-top: 20px;
             padding: 20px;
-            border: 1px solid #ccc;
+            border: 1px solid #000000;
             min-height: 100px;
             font-size: 1.2em;
-            color: #fff;
+            color: #fff; /* ensure contents are white */
             text-shadow: 1px 1px 6px #000, 0 0 2px #000;
+        }
+        /* make any text inside the scene white as well */
+        #scene, #scene * {
+            color: #fff !important;
+        }
+        #scene table, #scene table th, #scene table td {
+            color: #fff !important;
         }
         button {
             margin-right: 10px;
             margin-bottom: 10px;
         }
     </style>
+    <!-- load astronomy library globally so subpages can use it -->
+    <script src="Astro-sub/astronomy.min.js"></script>
 </head>
 <body>
     <button onclick="changeScene('menu-content.html')">Menu</button>
@@ -45,7 +55,7 @@
     <button onclick="changeScene('universalgravity.html')">Universal Gravity</button>
     <button
 onclick="changeScene('fitsjs.html')">star magnitude</button>
-    <button
+    <button onclick="changeScene('Astro-sub/planet_positions.html')">Planet Positions</button>
 
     <div id="scene">
         Welcome! This app is designed to make astronomy tools easier to use.
@@ -66,16 +76,36 @@ onclick="changeScene('fitsjs.html')">star magnitude</button>
                     const tempDiv = document.createElement('div');
                     tempDiv.innerHTML = html;
                     const scripts = tempDiv.querySelectorAll('script');
+                    // Load external scripts first, then execute inline scripts
+                    const inlineCodes = [];
+                    const loadPromises = [];
                     scripts.forEach(oldScript => {
-                        const newScript = document.createElement('script');
                         if (oldScript.src) {
+                            const newScript = document.createElement('script');
                             newScript.src = oldScript.src;
+                            // track loading so inline scripts run afterwards
+                            loadPromises.push(new Promise((res, rej) => {
+                                newScript.onload = res;
+                                newScript.onerror = rej;
+                            }));
+                            document.body.appendChild(newScript);
                         } else {
-                            newScript.textContent = oldScript.textContent;
+                            inlineCodes.push(oldScript.textContent);
                         }
-                        document.body.appendChild(newScript);
-                        // Optionally remove the script after execution
-                        // document.body.removeChild(newScript);
+                    });
+                    Promise.all(loadPromises).then(() => {
+                        inlineCodes.forEach(code => {
+                            const s = document.createElement('script');
+                            s.textContent = code;
+                            document.body.appendChild(s);
+                        });
+                        // call any initializer defined by the loaded scene
+                        if (typeof sceneInit === 'function') {
+                            try { sceneInit(); }
+                            catch(err) { console.error('sceneInit error', err); }
+                        }
+                    }).catch(err => {
+                        console.error('Failed to load external script', err);
                     });
                 })
                 .catch(() => {
