@@ -55,9 +55,7 @@
     <button onclick="changeScene('universalgravity.html')">Universal Gravity</button>
     <button
 onclick="changeScene('fitsjs.html')">star magnitude</button>
-    <!-- link for debugging; you can click it to see if the file is actually reachable -->
     <button onclick="changeScene('Astro-sub/planet_positions.html')">Planet Positions</button>
-    <a id="planet-link" href="Astro-sub/planet_positions.html" style="display:none">raw planet page</a>
 
     <div id="scene">
         Welcome! This app is designed to make astronomy tools easier to use.
@@ -66,11 +64,7 @@ onclick="changeScene('fitsjs.html')">star magnitude</button>
 
     <script>
         function changeScene(filename) {
-            // log what path we're trying to load and resolve it relative to the
-            // current location so we can see exactly what URL the browser requests.
-            const url = new URL(filename, window.location.href).href;
-            console.log('changeScene called:', filename, '->', url);
-            fetch(url)
+            fetch(filename)
                 .then(response => {
                     if (!response.ok) throw new Error('File not found');
                     return response.text();
@@ -121,3 +115,4 @@ onclick="changeScene('fitsjs.html')">star magnitude</button>
     </script>
 </body>
 </html>
+
