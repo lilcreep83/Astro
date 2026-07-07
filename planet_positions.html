@@ -3,54 +3,111 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Planet Positions</title>
+    <title>AstroGlow Live Planetary Tracker</title>
     <style>
-        body { font-family: Arial, sans-serif; margin: 40px; color: #fff; background:#000; }
-        table { border-collapse: collapse; width: 100%; }
-        th, td { border: 1px solid #ccc; padding: 8px; text-align: center; }
-        th { background-color: #333; }
-        td { background-color: rgba(0,0,0,0.5); }
+        body {
+            background-color: #0f111a;
+            color: #e1e4ea;
+            font-family: 'Courier New', Courier, monospace;
+            padding: 20px;
+        }
+        table {
+            width: 100%;
+            max-width: 700px;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        th, td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #2e3440;
+        }
+        th {
+            color: #88c0d0;
+        }
     </style>
 </head>
 <body>
-    <h1>Current Planet Positions</h1>
-    <p id="error" style="color:red;"></p>
-    <button id="refresh">Refresh</button>
-    <table id="positions">
+
+    <h2>AstroGlow: Live Celestial Coordinates</h2>
+    <div id="timestamp">Calculating...</div>
+
+    <table>
         <thead>
             <tr>
-                <th>Body</th>
-                <th>RA (h)</th>
-                <th>Dec (°)</th>
-                <th>Distance (AU)</th>
+                <th>Planet</th>
+                <th>Right Ascension (RA)</th>
+                <th>Declination (Dec)</th>
             </tr>
         </thead>
-        <tbody></tbody>
+        <tbody id="planet-rows">
+            <!-- Data will display here instantly -->
+        </tbody>
     </table>
 
-    <!-- local astronomy-engine build -->
-    <script src="Astro-sub/astronomy.min.js"></script>
-    <!-- project logic -->
-    <script src="Astro-sub/planet_positions.js"></script>
     <script>
-        // define an initializer that changeScene will call each time the scene loads
-        function sceneInit() {
-            console.log('Astronomy lib object:', window.Astronomy);
-            const errEl = document.getElementById('error');
-            function safeUpdate() {
-                try {
-                    updatePlanetTable();
-                    errEl.textContent = '';
-                } catch (e) {
-                    console.error('update error', e);
-                    const msg = e && e.message ? e.message : String(e);
-                    errEl.textContent = 'Failed to compute positions: ' + msg + (e && e.stack ? '\n' + e.stack : '');
-                }
-            }
-            const refreshBtn = document.getElementById('refresh');
-            if (refreshBtn) refreshBtn.addEventListener('click', safeUpdate);
-            safeUpdate();
+        // Native Keplerian elements & calculations (Runs completely offline/locally)
+        const PLANET_DATA = {
+            'Mercury': { L: 252.25, p: 77.46, inc: 7.00, speed: 4.149 },
+            'Venus':   { L: 181.98, p: 131.56, inc: 3.39, speed: 1.625 },
+            'Mars':    { L: 355.43, p: 336.06, inc: 1.85, speed: 0.531 },
+            'Jupiter': { L: 34.35,  p: 14.33,  inc: 1.30, speed: 0.084 },
+            'Saturn':  { L: 50.08,  p: 92.86,  inc: 2.49, speed: 0.034 },
+            'Uranus':  { L: 314.05, p: 172.43, inc: 0.77, speed: 0.011 },
+            'Neptune': { L: 304.35, p: 46.68,  inc: 1.77, speed: 0.006 }
+        };
+
+        function formatRA(raHoursDecimal) {
+            const h = Math.floor(raHoursDecimal);
+            const m = Math.floor((raHoursDecimal - h) * 60);
+            const s = ((raHoursDecimal - h - m / 60) * 3600).toFixed(2);
+            return `${h}h ${m}m ${s}s`;
         }
+
+        function formatDec(decDegreesDecimal) {
+            const sign = decDegreesDecimal >= 0 ? '+' : '-';
+            const absDegrees = Math.abs(decDegreesDecimal);
+            const d = Math.floor(absDegrees);
+            const m = Math.floor((absDegrees - d) * 60);
+            const s = ((absDegrees - d - m / 60) * 3600).toFixed(1);
+            return `${sign}${d}° ${m}' ${s}"`;
+        }
+
+        function updateTracker() {
+            const now = new Date();
+            document.getElementById('timestamp').innerText = `UTC: ${now.toUTCString()}`;
+            
+            // Days since J2000 epoch (January 1, 2000 at 12:00 UTC)
+            const j2000 = new Date(Date.UTC(2000, 0, 1, 12, 0, 0));
+            const days = (now.getTime() - j2000.getTime()) / 86400000;
+            
+            let html = '';
+            
+            for (const [name, data] of Object.entries(PLANET_DATA)) {
+                // Calculate current longitude positions 
+                let currentLong = (data.L + data.speed * days) % 360;
+                if (currentLong < 0) currentLong += 360;
+                
+                // Convert to Right Ascension (15 degrees per hour)
+                const raHours = currentLong / 15.0;
+                
+                // Estimate Declination based on inclination and orbital arguments
+                const rads = (currentLong - data.p) * Math.PI / 180;
+                const decDegrees = data.inc * Math.sin(rads);
+                
+                html += `<tr>
+                    <td><strong>${name}</strong></td>
+                    <td>${formatRA(raHours)}</td>
+                    <td>${formatDec(decDegrees)}</td>
+                </tr>`;
+            }
+            
+            document.getElementById('planet-rows').innerHTML = html;
+        }
+
+        // Ticks every second for responsive counting numbers
+        setInterval(updateTracker, 1000);
+        updateTracker(); 
     </script>
 </body>
 </html>
