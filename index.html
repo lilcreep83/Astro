@@ -2,117 +2,381 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>AstroGlow</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AstroGlow · Astronomy Tools</title>
     <style>
+        /* ── reset & base ── */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            min-height: 100vh;
+            background: #080a12;
+            font-family: 'Inter', 'Segoe UI', system-ui, -apple-system, sans-serif;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 24px;
+            position: relative;
+            overflow-x: hidden;
+        }
+
+        /* ── animated starfield ── */
+        .stars {
+            position: fixed;
+            inset: 0;
+            z-index: 0;
+            pointer-events: none;
+            overflow: hidden;
+        }
+        .star {
+            position: absolute;
+            width: 2px;
+            height: 2px;
+            background: #fff;
+            border-radius: 50%;
+            animation: twinkle var(--d, 3s) ease-in-out infinite alternate;
+        }
+        @keyframes twinkle {
+            0% { opacity: 0.15; transform: scale(0.8); }
+            100% { opacity: 1; transform: scale(1.2); }
+        }
+
+        .orb-glow {
+            position: fixed;
+            border-radius: 50%;
+            filter: blur(100px);
+            opacity: 0.15;
+            pointer-events: none;
+            z-index: 0;
+        }
+        .orb-glow-1 {
+            width: 500px;
+            height: 500px;
+            background: #6c5ce7;
+            top: -200px;
+            right: -150px;
+            animation: drift 20s ease-in-out infinite alternate;
+        }
+        .orb-glow-2 {
+            width: 400px;
+            height: 400px;
+            background: #00b4d8;
+            bottom: -150px;
+            left: -100px;
+            animation: drift 25s ease-in-out infinite alternate-reverse;
+        }
+        @keyframes drift {
+            0% { transform: translate(0, 0); }
+            100% { transform: translate(60px, 40px); }
+        }
+
+        /* ── main card ── */
+        .app-card {
+            position: relative;
+            z-index: 1;
+            width: 100%;
+            max-width: 1100px;
+            background: rgba(12, 16, 28, 0.72);
+            backdrop-filter: blur(18px) saturate(1.4);
+            -webkit-backdrop-filter: blur(18px) saturate(1.4);
+            border-radius: 40px;
+            padding: 32px 36px 40px;
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            box-shadow: 0 30px 80px rgba(0, 0, 0, 0.8), 0 0 0 1px rgba(255, 255, 255, 0.02) inset;
+        }
+
+        .app-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 16px 24px;
+            margin-bottom: 24px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+            padding-bottom: 16px;
+        }
+        .app-brand {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+        }
+        .app-brand .logo-icon {
+            font-size: 32px;
+            line-height: 1;
+            filter: drop-shadow(0 0 12px rgba(108, 92, 231, 0.5));
+        }
+        .app-brand h1 {
+            font-size: 26px;
+            font-weight: 600;
+            letter-spacing: -0.02em;
+            background: linear-gradient(135deg, #e8edff 0%, #a5b4fc 50%, #6c5ce7 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        .app-brand .sub {
+            font-size: 14px;
+            font-weight: 400;
+            color: rgba(255, 255, 255, 0.3);
+            -webkit-text-fill-color: rgba(255, 255, 255, 0.3);
+            margin-left: 4px;
+        }
+
         .nav-buttons {
             display: flex;
             flex-wrap: wrap;
-            margin-bottom: 10px;
+            gap: 10px 12px;
+            margin-bottom: 20px;
+            padding: 4px 0;
         }
-        body {
-            background-image: url('https://apod.nasa.gov/apod/image/1910/M42Detailed_DrudisGoldman_8150.jpg');
-            background-size: cover;
-            background-repeat: no-repeat;
-            background-attachment: fixed;
-            color: #fff; /* global text color */
+        .nav-buttons button {
+            background: rgba(255, 255, 255, 0.04);
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            color: rgba(255, 255, 255, 0.7);
+            padding: 8px 20px;
+            border-radius: 40px;
+            font-size: 14px;
+            font-weight: 500;
+            font-family: 'Inter', sans-serif;
+            cursor: pointer;
+            transition: all 0.25s ease;
+            backdrop-filter: blur(4px);
+            white-space: nowrap;
         }
+        .nav-buttons button:hover {
+            background: rgba(255, 255, 255, 0.12);
+            border-color: rgba(255, 255, 255, 0.25);
+            color: #fff;
+            transform: translateY(-2px);
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.4);
+        }
+
         #scene {
-            margin-top: 20px;
-            padding: 20px;
-            border: 1px solid #000000;
-            min-height: 100px;
+            margin-top: 12px;
+            border-radius: 24px;
+            min-height: 200px;
+            color: rgba(255, 255, 255, 0.9);
+            font-size: 1.1em;
+            line-height: 1.6;
+        }
+        #scene.loading {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 300px;
+            opacity: 0.6;
+        }
+        #scene.loading::after {
+            content: "✦ loading…";
             font-size: 1.2em;
-            color: #fff; /* ensure contents are white */
-            text-shadow: 1px 1px 6px #000, 0 0 2px #000;
+            letter-spacing: 0.1em;
+            animation: pulse-text 1.5s ease-in-out infinite;
         }
-        /* make any text inside the scene white as well */
-        #scene, #scene * {
-            color: #fff !important;
+        @keyframes pulse-text {
+            0%, 100% { opacity: 0.3; }
+            50% { opacity: 1; }
         }
-        #scene table, #scene table th, #scene table td {
-            color: #fff !important;
+
+        .app-footer {
+            margin-top: 24px;
+            padding-top: 16px;
+            border-top: 1px solid rgba(255, 255, 255, 0.03);
+            text-align: right;
+            font-size: 12px;
+            color: rgba(255, 255, 255, 0.12);
         }
-        button {
-            margin-right: 10px;
-            margin-bottom: 10px;
+
+        @media (max-width: 640px) {
+            .app-card { padding: 20px 16px 28px; }
+            .app-brand h1 { font-size: 20px; }
+            .nav-buttons button { padding: 6px 14px; font-size: 12px; }
+        }
+        @media (max-width: 440px) {
+            .app-card { padding: 14px 10px 20px; }
+            .app-brand h1 { font-size: 17px; }
+            .nav-buttons button { padding: 4px 12px; font-size: 11px; }
         }
     </style>
-    <!-- load astronomy library globally so subpages can use it -->
     <script src="Astro-sub/astronomy.min.js"></script>
 </head>
 <body>
-    <button onclick="changeScene('menu-content.html')">Menu</button>
-    <button onclick="changeScene('about.html')">About</button>
-    <button onclick="changeScene('contact.html')">Contact</button>
-    <button onclick="changeScene('help.html')">Help</button>
-    <button onclick="changeScene('MoonPhase.html')">Moon Phase</button>
-    <button onclick="changeScene('parallax.html')">Stellar Parallax</button>
-    <button onclick="changeScene('redshift.html')">Redshift</button>
-    <button onclick="changeScene('escape.html')">Escape Velocity</button>
-    <button onclick="changeScene('gforce.html')">Gravitational Force</button>
-    <button onclick="changeScene('angular.html')">Angular Size</button>
-    <button onclick="changeScene('emc.html')">E=mc^2</button>
-    <button onclick="changeScene('universalgravity.html')">Universal Gravity</button>
-    <button
-onclick="changeScene('fitsjs.html')">star magnitude</button>
-    <button onclick="changeScene('planet_positions.html')">Planet Positions</button>
 
-    <div id="scene">
-        Welcome! This app is designed to make astronomy tools easier to use.
-        <p>Here we also have links to helpful websites and resources.</p>
+    <div class="stars" id="stars"></div>
+    <div class="orb-glow orb-glow-1"></div>
+    <div class="orb-glow orb-glow-2"></div>
+
+    <div class="app-card">
+        <div class="app-header">
+            <div class="app-brand">
+                <span class="logo-icon">✦</span>
+                <h1>AstroGlow <span class="sub">· tools</span></h1>
+            </div>
+            <div style="font-size:13px; color: rgba(255,255,255,0.2);">
+                <span id="live-timestamp">⟡ loading…</span>
+            </div>
+        </div>
+
+        <div class="nav-buttons">
+            <button data-scene="menu-content.html">Menu</button>
+            <button data-scene="about.html">About</button>
+            <button data-scene="contact.html">Contact</button>
+            <button data-scene="help.html">Help</button>
+            <button data-scene="MoonPhase.html">Moon Phase</button>
+            <button data-scene="parallax.html">Stellar Parallax</button>
+            <button data-scene="redshift.html">Redshift</button>
+            <button data-scene="escape.html">Escape Velocity</button>
+            <button data-scene="gforce.html">Gravitational Force</button>
+            <button data-scene="angular.html">Angular Size</button>
+            <button data-scene="emc.html">E=mc²</button>
+            <button data-scene="universalgravity.html">Universal Gravity</button>
+            <button data-scene="fitsjs.html">Star Magnitude</button>
+            <button data-scene="planet_positions.html">Planet Positions</button>
+        </div>
+
+        <div id="scene">
+            <div style="padding: 20px 0; text-align: center; opacity: 0.7;">
+                <p style="font-size: 1.2em;">✦</p>
+                <p style="margin-top: 8px; font-weight: 300;">Welcome to AstroGlow</p>
+                <p style="font-size: 0.9em; opacity: 0.5;">Click a button to load a tool</p>
+            </div>
+        </div>
+
+        <div class="app-footer">✦ live · v2.2</div>
     </div>
 
     <script>
+        // ─── live timestamp ─────────────────────────────────────────────
+        function updateTimestamp() {
+            document.getElementById('live-timestamp').textContent = '⟡ ' + new Date().toUTCString();
+        }
+        updateTimestamp();
+        setInterval(updateTimestamp, 1000);
+
+        // ─── starfield ──────────────────────────────────────────────────
+        (function() {
+            const container = document.getElementById('stars');
+            for (let i = 0; i < 220; i++) {
+                const star = document.createElement('div');
+                star.className = 'star';
+                const size = 1 + Math.random() * 2.5;
+                star.style.width = size + 'px';
+                star.style.height = size + 'px';
+                star.style.left = Math.random() * 100 + '%';
+                star.style.top = Math.random() * 100 + '%';
+                star.style.setProperty('--d', (2 + Math.random() * 5) + 's');
+                star.style.animationDelay = (Math.random() * 6) + 's';
+                star.style.opacity = 0.2 + Math.random() * 0.6;
+                container.appendChild(star);
+            }
+        })();
+
+        // ─── ROCK‑SOLID SCENE LOADER ──────────────────────────────────
         function changeScene(filename) {
+            const scene = document.getElementById('scene');
+            scene.classList.add('loading');
+            scene.innerHTML = '';
+
             fetch(filename)
-                .then(response => {
-                    if (!response.ok) throw new Error('File not found');
-                    return response.text();
+                .then(res => {
+                    if (!res.ok) throw new Error(`HTTP ${res.status} — ${filename} not found`);
+                    return res.text();
                 })
                 .then(html => {
-                    const sceneDiv = document.getElementById('scene');
-                    sceneDiv.innerHTML = html;
-                    // Find and execute scripts in the loaded HTML
-                    const tempDiv = document.createElement('div');
-                    tempDiv.innerHTML = html;
-                    const scripts = tempDiv.querySelectorAll('script');
-                    // Load external scripts first, then execute inline scripts
-                    const inlineCodes = [];
-                    const loadPromises = [];
-                    scripts.forEach(oldScript => {
-                        if (oldScript.src) {
-                            const newScript = document.createElement('script');
-                            newScript.src = oldScript.src;
-                            // track loading so inline scripts run afterwards
-                            loadPromises.push(new Promise((res, rej) => {
-                                newScript.onload = res;
-                                newScript.onerror = rej;
-                            }));
-                            document.body.appendChild(newScript);
+                    scene.classList.remove('loading');
+
+                    // Parse HTML into a document
+                    const parser = new DOMParser();
+                    const doc = parser.parseFromString(html, 'text/html');
+
+                    // Extract the body content (everything inside <body>)
+                    const bodyContent = doc.body.innerHTML;
+
+                    // Insert the content into our scene
+                    scene.innerHTML = bodyContent;
+
+                    // Extract all <script> tags from the parsed doc (including those in head)
+                    const scripts = doc.querySelectorAll('script');
+                    const externalScripts = [];
+                    const inlineScripts = [];
+
+                    scripts.forEach(script => {
+                        if (script.src) {
+                            externalScripts.push(script.src);
                         } else {
-                            inlineCodes.push(oldScript.textContent);
+                            inlineScripts.push(script.textContent);
                         }
                     });
-                    Promise.all(loadPromises).then(() => {
-                        inlineCodes.forEach(code => {
-                            const s = document.createElement('script');
-                            s.textContent = code;
-                            document.body.appendChild(s);
+
+                    // Function to execute inline scripts in order
+                    function runInlineScripts() {
+                        inlineScripts.forEach(code => {
+                            try {
+                                // Use eval to ensure the script runs in the global scope
+                                eval(code);
+                            } catch (err) {
+                                console.warn('Inline script error:', err);
+                            }
                         });
-                        // call any initializer defined by the loaded scene
-                        if (typeof sceneInit === 'function') {
-                            try { sceneInit(); }
-                            catch(err) { console.error('sceneInit error', err); }
+                        // Fire a custom event to notify that the scene is fully loaded
+                        document.dispatchEvent(new CustomEvent('sceneLoaded', { detail: { filename } }));
+                        // Also call a global init function if the subpage defined one
+                        if (typeof window.sceneInit === 'function') {
+                            try { window.sceneInit(); } catch (e) { console.warn('sceneInit error:', e); }
                         }
-                    }).catch(err => {
-                        console.error('Failed to load external script', err);
-                    });
+                    }
+
+                    // Load external scripts sequentially
+                    function loadExternalScripts(index) {
+                        if (index >= externalScripts.length) {
+                            runInlineScripts();
+                            return;
+                        }
+                        const src = externalScripts[index];
+                        const scriptTag = document.createElement('script');
+                        scriptTag.src = src;
+                        scriptTag.onload = () => loadExternalScripts(index + 1);
+                        scriptTag.onerror = () => {
+                            console.warn('Failed to load external script:', src);
+                            loadExternalScripts(index + 1); // continue anyway
+                        };
+                        document.body.appendChild(scriptTag);
+                    }
+
+                    // Start loading external scripts
+                    if (externalScripts.length === 0) {
+                        runInlineScripts();
+                    } else {
+                        loadExternalScripts(0);
+                    }
                 })
-                .catch(() => {
-                    document.getElementById('scene').textContent = "Scene not found.";
+                .catch(err => {
+                    scene.classList.remove('loading');
+                    scene.innerHTML = `
+                        <div style="padding: 40px 20px; text-align: center; opacity: 0.6;">
+                            <p>⚠️</p>
+                            <p style="margin-top: 12px;">Could not load <strong>${filename}</strong></p>
+                            <p style="font-size: 0.8em; opacity: 0.5;">${err.message}</p>
+                        </div>
+                    `;
+                    console.error('changeScene error:', err);
                 });
         }
+
+        // ─── attach click listeners ──────────────────────────────────
+        document.querySelectorAll('.nav-buttons button[data-scene]').forEach(btn => {
+            btn.addEventListener('click', function() {
+                changeScene(this.getAttribute('data-scene'));
+            });
+        });
+
+        // Expose changeScene globally (just in case)
+        window.changeScene = changeScene;s
+
+        console.log('✦ AstroGlow ready – click a button to load a scene.');
     </script>
 </body>
 </html>
-
