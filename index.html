@@ -234,7 +234,8 @@
             <button data-scene="emc.html">E=mc²</button>
             <button data-scene="universalgravity.html">Universal Gravity</button>
             <button data-scene="fitsjs.html">Star Magnitude</button>
-            <button data-scene="planet_positions.html">Planet Positions</button>
+            <!-- NEW: Update Log button -->
+            <button data-scene="update_log.html">📜 Update Log</button>
         </div>
 
         <div id="scene">
@@ -288,17 +289,11 @@
                 .then(html => {
                     scene.classList.remove('loading');
 
-                    // Parse HTML into a document
                     const parser = new DOMParser();
                     const doc = parser.parseFromString(html, 'text/html');
-
-                    // Extract the body content (everything inside <body>)
                     const bodyContent = doc.body.innerHTML;
-
-                    // Insert the content into our scene
                     scene.innerHTML = bodyContent;
 
-                    // Extract all <script> tags from the parsed doc (including those in head)
                     const scripts = doc.querySelectorAll('script');
                     const externalScripts = [];
                     const inlineScripts = [];
@@ -311,25 +306,20 @@
                         }
                     });
 
-                    // Function to execute inline scripts in order
                     function runInlineScripts() {
                         inlineScripts.forEach(code => {
                             try {
-                                // Use eval to ensure the script runs in the global scope
                                 eval(code);
                             } catch (err) {
                                 console.warn('Inline script error:', err);
                             }
                         });
-                        // Fire a custom event to notify that the scene is fully loaded
                         document.dispatchEvent(new CustomEvent('sceneLoaded', { detail: { filename } }));
-                        // Also call a global init function if the subpage defined one
                         if (typeof window.sceneInit === 'function') {
                             try { window.sceneInit(); } catch (e) { console.warn('sceneInit error:', e); }
                         }
                     }
 
-                    // Load external scripts sequentially
                     function loadExternalScripts(index) {
                         if (index >= externalScripts.length) {
                             runInlineScripts();
@@ -341,12 +331,11 @@
                         scriptTag.onload = () => loadExternalScripts(index + 1);
                         scriptTag.onerror = () => {
                             console.warn('Failed to load external script:', src);
-                            loadExternalScripts(index + 1); // continue anyway
+                            loadExternalScripts(index + 1);
                         };
                         document.body.appendChild(scriptTag);
                     }
 
-                    // Start loading external scripts
                     if (externalScripts.length === 0) {
                         runInlineScripts();
                     } else {
@@ -373,9 +362,7 @@
             });
         });
 
-        // Expose changeScene globally (just in case)
-        window.changeScene = changeScene;s
-
+        window.changeScene = changeScene;
         console.log('✦ AstroGlow ready – click a button to load a scene.');
     </script>
 </body>
